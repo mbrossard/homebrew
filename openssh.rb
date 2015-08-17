@@ -1,10 +1,10 @@
 class Openssh < Formula
   desc "OpenBSD freely-licensed SSH connectivity tools"
   homepage "http://www.openssh.com/"
-  url "http://ftp.openbsd.org/pub/OpenBSD/OpenSSH/portable/openssh-6.9p1.tar.gz"
-  mirror "https://fossies.org/linux/misc/openssh-6.9p1.tar.gz"
-  version "6.9p1"
-  sha256 "6e074df538f357d440be6cf93dc581a21f22d39e236f217fcd8eacbb6c896cfe"
+  url "http://ftp.openbsd.org/pub/OpenBSD/OpenSSH/portable/openssh-7.0p1.tar.gz"
+  mirror "https://www.mirrorservice.org/pub/OpenBSD/OpenSSH/portable/openssh-7.0p1.tar.gz"
+  version "7.0p1"
+  sha256 "fd5932493a19f4c81153d812ee4e042b49bbd3b759ab3d9344abecc2bc1485e5"
 
   option "with-libressl", "Build with LibreSSL instead of OpenSSL"
 
@@ -25,7 +25,7 @@ class Openssh < Formula
 
   patch do
     url "https://raw.githubusercontent.com/mbrossard/homebrew-dupes/master/patches/openssh-launchd-support.patch"
-    sha256 "9dc71f3485c525dc289528353b675d84ebf23bc64ec89998da92e1a3c77d3fc9"
+    sha256 "16d87cf06291ca5e14a0406af0a52bde1255f1a85e68ddbef42c2c0cf8804d83"
   end
 
   patch do
