@@ -1,6 +1,6 @@
-diff -u -r openssh-6.9p1.orig/ssh-agent.c openssh-6.9p1/ssh-agent.c
---- openssh-6.9p1.orig/ssh-agent.c	2015-08-06 10:53:45.000000000 -0700
-+++ openssh-6.9p1/ssh-agent.c	2015-08-07 16:15:38.000000000 -0700
+diff -r -u openssh-7.0p1.orig/ssh-agent.c openssh-7.0p1/ssh-agent.c
+--- openssh-7.0p1.orig/ssh-agent.c	2015-08-17 16:39:06.000000000 -0700
++++ openssh-7.0p1/ssh-agent.c	2015-08-17 16:39:21.000000000 -0700
 @@ -72,6 +72,10 @@
  # include <util.h>
  #endif
@@ -9,10 +9,10 @@ diff -u -r openssh-6.9p1.orig/ssh-agent.c openssh-6.9p1/ssh-agent.c
 +#include <launch.h>
 +#endif
 +
- #include "key.h"	/* XXX for typedef */
- #include "buffer.h"	/* XXX for typedef */
- 
-@@ -1176,6 +1180,9 @@
+ #include "xmalloc.h"
+ #include "ssh.h"
+ #include "rsa.h"
+@@ -1173,6 +1177,9 @@
  main(int ac, char **av)
  {
  	int c_flag = 0, d_flag = 0, D_flag = 0, k_flag = 0, s_flag = 0;
@@ -22,7 +22,7 @@ diff -u -r openssh-6.9p1.orig/ssh-agent.c openssh-6.9p1/ssh-agent.c
  	int sock, fd, ch, result, saved_errno;
  	u_int nalloc;
  	char *shell, *format, *pidstr, *agentsocket = NULL;
-@@ -1210,7 +1217,11 @@
+@@ -1207,7 +1214,11 @@
  	__progname = ssh_get_progname(av[0]);
  	seed_rng();
  
@@ -34,7 +34,7 @@ diff -u -r openssh-6.9p1.orig/ssh-agent.c openssh-6.9p1/ssh-agent.c
  		switch (ch) {
  		case 'E':
  			fingerprint_hash = ssh_digest_alg_by_name(optarg);
-@@ -1225,6 +1236,11 @@
+@@ -1222,6 +1233,11 @@
  		case 'k':
  			k_flag++;
  			break;
@@ -46,7 +46,7 @@ diff -u -r openssh-6.9p1.orig/ssh-agent.c openssh-6.9p1/ssh-agent.c
  		case 's':
  			if (c_flag)
  				usage();
-@@ -1256,7 +1272,11 @@
+@@ -1253,7 +1269,11 @@
  	ac -= optind;
  	av += optind;
  
@@ -58,7 +58,7 @@ diff -u -r openssh-6.9p1.orig/ssh-agent.c openssh-6.9p1/ssh-agent.c
  		usage();
  
  	if (ac == 0 && !c_flag && !s_flag) {
-@@ -1312,6 +1332,53 @@
+@@ -1309,6 +1329,53 @@
  	 * Create socket early so it will exist before command gets run from
  	 * the parent.
  	 */
@@ -112,7 +112,7 @@ diff -u -r openssh-6.9p1.orig/ssh-agent.c openssh-6.9p1/ssh-agent.c
  	prev_mask = umask(0177);
  	sock = unix_listener(socket_name, SSH_LISTEN_BACKLOG, 0);
  	if (sock < 0) {
-@@ -1320,6 +1387,12 @@
+@@ -1317,6 +1384,12 @@
  		cleanup_exit(1);
  	}
  	umask(prev_mask);
@@ -125,7 +125,7 @@ diff -u -r openssh-6.9p1.orig/ssh-agent.c openssh-6.9p1/ssh-agent.c
  
  	/*
  	 * Fork, and have the parent execute the command, if any, or present
-@@ -1396,6 +1469,7 @@
+@@ -1393,6 +1466,7 @@
  	pkcs11_init(0);
  #endif
  	new_socket(AUTH_SOCKET, sock);
@@ -133,4 +133,3 @@ diff -u -r openssh-6.9p1.orig/ssh-agent.c openssh-6.9p1/ssh-agent.c
  	if (ac > 0)
  		parent_alive_interval = 10;
  	idtab_init();
-Only in openssh-6.9p1: ssh-agent.c~
