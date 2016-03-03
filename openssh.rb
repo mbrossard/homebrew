@@ -4,7 +4,7 @@ class Openssh < Formula
   url "http://ftp.openbsd.org/pub/OpenBSD/OpenSSH/portable/openssh-7.1p2.tar.gz"
   mirror "https://www.mirrorservice.org/pub/OpenBSD/OpenSSH/portable/openssh-7.1p2.tar.gz"
   version "7.1p2"
-  sha256 "dd75f024dcf21e06a0d6421d582690bf987a1f6323e32ad6619392f3bfde6bbd"
+  sha256 "973cc37b2f3597e4cf599b09e604e79c0fe5d9b6f595a24e91ed0662860b4ac3"
 
   option "with-libressl", "Build with LibreSSL instead of OpenSSL"
 
@@ -14,28 +14,18 @@ class Openssh < Formula
   depends_on "pkg-config" => :build if build.with? "ldns"
 
   patch do
-    url "https://raw.githubusercontent.com/mbrossard/homebrew-dupes/master/patches/openssh-sandbox.patch"
-    sha256 "82c287053eed12ce064f0b180eac2ae995a2b97c6cc38ad1bdd7626016204205"
+    url "https://raw.githubusercontent.com/mbrossard/homebrew-dupes/master/patches/openssh-sandbox-7.2p1.patch"
+    sha256 "b4d731c8b4dc4aaf0498fb4afc1f41eb784182d401e9d90e02b2c10e79feb728"
   end
 
   patch do
-    url "https://raw.githubusercontent.com/mbrossard/homebrew-dupes/master/patches/openssh-launchd.patch"
-    sha256 "012ee24bf0265dedd5bfd2745cf8262c3240a6d70edcd555e5b35f99ed070590"
+    url "https://raw.githubusercontent.com/mbrossard/homebrew-dupes/master/patches/openssh-launchd-7.2p1.patch"
+    sha256 "9b8d752cc54028a1d5e7b476533a65ec9106e380ec176536cfde25213464429b"
   end
 
   patch do
-    url "https://raw.githubusercontent.com/mbrossard/homebrew-dupes/master/patches/openssh-launchd-support.patch"
-    sha256 "16d87cf06291ca5e14a0406af0a52bde1255f1a85e68ddbef42c2c0cf8804d83"
-  end
-
-  patch do
-    url "https://raw.githubusercontent.com/mbrossard/homebrew-dupes/master/patches/openssh-pap-0.6.9p1.patch"
-    sha256 "665c5d6f026a1beafaf7160f80cc003cc5dc3d0a9a804423191873e50f5c60d8"
-  end
-
-  patch do
-    url "https://raw.githubusercontent.com/mbrossard/homebrew-dupes/master/patches/openssh-exponent.patch"
-    sha256 "3d32d794086f754229727a7b2a9905edccdd6f9860e23f76720b2bb4c991d7e7"
+    url "https://raw.githubusercontent.com/mbrossard/homebrew-dupes/master/patches/openssh-pkcs11-7.2p1.patch"
+    sha256 "0b981b38b791e4a703f3096c3a75b27c8844014261fc1ca2067e1fc629d0c1a6"
   end
 
   def install

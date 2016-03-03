@@ -10,7 +10,7 @@ index 40cc7aa..8fcc6bf 100644
  	-e 's|/var/run/sshd.pid|$(piddir)/sshd.pid|g' \
  	-e 's|/etc/moduli|$(sysconfdir)/moduli|g' \
  	-e 's|/etc/ssh/moduli|$(sysconfdir)/moduli|g' \
-@@ -356,6 +357,7 @@ install-sysconf:
+@@ -352,6 +353,7 @@ install-sysconf:
  	else \
  		echo "$(DESTDIR)$(sysconfdir)/moduli already exists, install will not overwrite"; \
  	fi
@@ -93,17 +93,16 @@ diff --git a/sshd.c b/sshd.c
 index e1c767c..db32cd7 100644
 --- a/sshd.c
 +++ b/sshd.c
-@@ -714,11 +714,18 @@ privsep_preauth(Authctxt *authctxt)
+@@ -713,10 +713,17 @@ privsep_preauth(Authctxt *authctxt)
+ 		/* Arrange for logging to be sent to the monitor */
  		set_log_handler(mm_log_handler, pmonitor);
  
- 		/* Demote the child */
 +#ifdef	__APPLE_SANDBOX_NAMED_EXTERNAL__
 +		/* We need to do this before we chroot() so we can read sshd.sb */
 +		if (box != NULL)
 +			ssh_sandbox_child(box);
 +#endif
- 		if (getuid() == 0 || geteuid() == 0)
- 			privsep_preauth_child();
+ 		privsep_preauth_child();
  		setproctitle("%s", "[net]");
 +#ifndef __APPLE_SANDBOX_NAMED_EXTERNAL__
  		if (box != NULL)
