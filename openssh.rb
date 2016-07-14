@@ -24,8 +24,13 @@ class Openssh < Formula
   end
 
   patch do
-    url "https://raw.githubusercontent.com/mbrossard/homebrew-dupes/master/patches/openssh-pkcs11-7.2p1.patch"
-    sha256 "0b981b38b791e4a703f3096c3a75b27c8844014261fc1ca2067e1fc629d0c1a6"
+    url "https://raw.githubusercontent.com/mbrossard/homebrew-dupes/master/patches/openssh-ecdsa-pkcs11-7.2p2.patch"
+    sha256 "f0f7ced6fd5f711ec4e38855676ffbb3ec4214c9f77f951db8979fac05e6a2f6"
+  end
+
+  patch do
+    url "https://raw.githubusercontent.com/mbrossard/homebrew-dupes/master/patches/openssh-pkcs11-7.2p2.patch"
+    sha256 "0558abece028c00594dfb62e33d8f4fded770553685debc0c578270c644635a7"
   end
 
   def install
