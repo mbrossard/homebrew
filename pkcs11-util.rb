@@ -18,8 +18,8 @@ class Pkcs11Util < Formula
                           "--disable-silent-rules",
                           "--prefix=#{prefix}",
                           "--with-openssl=#{Formula["openssl"].opt_prefix}"
-    # system "cmake", ".", *std_cmake_args
-    system "make", "install" # if this fails, try separate make/make install steps
+
+    system "make", "install"
   end
 
   test do
