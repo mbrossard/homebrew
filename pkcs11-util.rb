@@ -9,6 +9,8 @@ class Pkcs11Util < Formula
   depends_on "automake" => :build
   depends_on "libtool"  => :build
   depends_on "openssl"
+  depends_on "nss"
+
   def install
     system "autoreconf -i"
     system "./configure", "--disable-debug",
