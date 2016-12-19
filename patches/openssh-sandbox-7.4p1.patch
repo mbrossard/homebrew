@@ -1,8 +1,7 @@
-diff --git a/Makefile.in b/Makefile.in
-index 40cc7aa..8fcc6bf 100644
---- a/Makefile.in
-+++ b/Makefile.in
-@@ -130,6 +130,7 @@ PATHSUBS	= \
+diff -ru openssh-7.4p1.orig/Makefile.in openssh-7.4p1/Makefile.in
+--- openssh-7.4p1.orig/Makefile.in	2016-12-19 11:08:26.000000000 -0800
++++ openssh-7.4p1/Makefile.in	2016-12-19 11:33:04.000000000 -0800
+@@ -130,6 +130,7 @@
  	-e 's|/etc/ssh/ssh_host_dsa_key|$(sysconfdir)/ssh_host_dsa_key|g' \
  	-e 's|/etc/ssh/ssh_host_rsa_key|$(sysconfdir)/ssh_host_rsa_key|g' \
  	-e 's|/etc/ssh/ssh_host_ed25519_key|$(sysconfdir)/ssh_host_ed25519_key|g' \
@@ -10,7 +9,7 @@ index 40cc7aa..8fcc6bf 100644
  	-e 's|/var/run/sshd.pid|$(piddir)/sshd.pid|g' \
  	-e 's|/etc/moduli|$(sysconfdir)/moduli|g' \
  	-e 's|/etc/ssh/moduli|$(sysconfdir)/moduli|g' \
-@@ -352,6 +353,7 @@ install-sysconf:
+@@ -363,6 +364,7 @@
  	else \
  		echo "$(DESTDIR)$(sysconfdir)/moduli already exists, install will not overwrite"; \
  	fi
@@ -18,37 +17,11 @@ index 40cc7aa..8fcc6bf 100644
  
  host-key: ssh-keygen$(EXEEXT)
  	@if [ -z "$(DESTDIR)" ] ; then \
-diff --git a/org.openssh.sshd.sb b/org.openssh.sshd.sb
-new file mode 100644
-index 0000000..73e9efd
---- /dev/null
-+++ b/org.openssh.sshd.sb
-@@ -0,0 +1,21 @@
-+;; Copyright (c) 2008 Apple Inc.  All Rights reserved.
-+;;
-+;; sshd - profile for privilege separated children
-+;;
-+;; WARNING: The sandbox rules in this file currently constitute
-+;; Apple System Private Interface and are subject to change at any time and
-+;; without notice.
-+;;
-+
-+(version 1)
-+
-+(deny default)
-+
-+(allow file-chroot)
-+(allow file-read-metadata (literal "/var"))
-+
-+(allow sysctl-read)
-+(allow mach-per-user-lookup)
-+(allow mach-lookup
-+	(global-name "com.apple.system.notification_center")
-+	(global-name "com.apple.system.logger"))
-diff --git a/pathnames.h b/pathnames.h
-index ec89fc6..7764f0e 100644
---- a/pathnames.h
-+++ b/pathnames.h
+Only in openssh-7.4p1: Makefile.in.orig
+Only in openssh-7.4p1: org.openssh.sshd.sb
+diff -ru openssh-7.4p1.orig/pathnames.h openssh-7.4p1/pathnames.h
+--- openssh-7.4p1.orig/pathnames.h	2016-12-19 11:08:26.000000000 -0800
++++ openssh-7.4p1/pathnames.h	2016-12-19 11:33:04.000000000 -0800
 @@ -35,6 +35,7 @@
   * should be world-readable.
   */
@@ -57,13 +30,12 @@ index ec89fc6..7764f0e 100644
  #define _PATH_HOST_CONFIG_FILE		SSHDIR "/ssh_config"
  #define _PATH_HOST_KEY_FILE		SSHDIR "/ssh_host_key"
  #define _PATH_HOST_DSA_KEY_FILE		SSHDIR "/ssh_host_dsa_key"
-diff --git a/sandbox-darwin.c b/sandbox-darwin.c
-index 35f0c4d..5a277a8 100644
---- a/sandbox-darwin.c
-+++ b/sandbox-darwin.c
-@@ -32,6 +32,10 @@
- #include "log.h"
+diff -ru openssh-7.4p1.orig/sandbox-darwin.c openssh-7.4p1/sandbox-darwin.c
+--- openssh-7.4p1.orig/sandbox-darwin.c	2016-12-19 11:08:26.000000000 -0800
++++ openssh-7.4p1/sandbox-darwin.c	2016-12-19 11:33:04.000000000 -0800
+@@ -33,6 +33,10 @@
  #include "sandbox.h"
+ #include "monitor.h"
  #include "xmalloc.h"
 +#include "pathnames.h"
 +
@@ -72,7 +44,7 @@ index 35f0c4d..5a277a8 100644
  
  /* Darwin/OS X sandbox */
  
-@@ -62,8 +66,16 @@ ssh_sandbox_child(struct ssh_sandbox *box)
+@@ -63,8 +67,16 @@
  	struct rlimit rl_zero;
  
  	debug3("%s: starting Darwin sandbox", __func__);
@@ -89,11 +61,11 @@ index 35f0c4d..5a277a8 100644
  		fatal("%s: sandbox_init: %s", __func__, errmsg);
  
  	/*
-diff --git a/sshd.c b/sshd.c
-index e1c767c..db32cd7 100644
---- a/sshd.c
-+++ b/sshd.c
-@@ -713,10 +713,17 @@ privsep_preauth(Authctxt *authctxt)
+Only in openssh-7.4p1: sandbox-darwin.c.orig
+diff -ru openssh-7.4p1.orig/sshd.c openssh-7.4p1/sshd.c
+--- openssh-7.4p1.orig/sshd.c	2016-12-19 11:08:26.000000000 -0800
++++ openssh-7.4p1/sshd.c	2016-12-19 11:33:04.000000000 -0800
+@@ -619,10 +619,17 @@
  		/* Arrange for logging to be sent to the monitor */
  		set_log_handler(mm_log_handler, pmonitor);
  
@@ -111,3 +83,4 @@ index e1c767c..db32cd7 100644
  
  		return 0;
  	}
+Only in openssh-7.4p1: sshd.c.orig
