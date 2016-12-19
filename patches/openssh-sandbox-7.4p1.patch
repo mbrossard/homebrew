@@ -17,8 +17,31 @@ diff -ru openssh-7.4p1.orig/Makefile.in openssh-7.4p1/Makefile.in
  
  host-key: ssh-keygen$(EXEEXT)
  	@if [ -z "$(DESTDIR)" ] ; then \
-Only in openssh-7.4p1: Makefile.in.orig
-Only in openssh-7.4p1: org.openssh.sshd.sb
+diff -ru /dev/null openssh-7.4p1/org.openssh.sshd.sb
+--- /dev/null
++++ openssh-7.4p1/org.openssh.sshd.sb	2016-12-19 11:33:04.000000000 -0800
+@@ -0,0 +1,21 @@
++;; Copyright (c) 2008 Apple Inc.  All Rights reserved.
++;;
++;; sshd - profile for privilege separated children
++;;
++;; WARNING: The sandbox rules in this file currently constitute
++;; Apple System Private Interface and are subject to change at any time and
++;; without notice.
++;;
++
++(version 1)
++
++(deny default)
++
++(allow file-chroot)
++(allow file-read-metadata (literal "/var"))
++
++(allow sysctl-read)
++(allow mach-per-user-lookup)
++(allow mach-lookup
++	(global-name "com.apple.system.notification_center")
++	(global-name "com.apple.system.logger"))
 diff -ru openssh-7.4p1.orig/pathnames.h openssh-7.4p1/pathnames.h
 --- openssh-7.4p1.orig/pathnames.h	2016-12-19 11:08:26.000000000 -0800
 +++ openssh-7.4p1/pathnames.h	2016-12-19 11:33:04.000000000 -0800
