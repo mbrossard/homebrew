@@ -133,3 +133,19 @@
  			}
  #ifdef ENABLE_PKCS11_ECDSA
  		} else if (attribs[1].type == CKA_EC_PARAMS ) {
+--- a/ssh-agent.c	2016-12-20 10:47:59.000000000 -0800
++++ b/ssh-agent.c	2016-12-20 10:50:43.000000000 -0800
+@@ -89,7 +89,11 @@
+ #endif
+ 
+ #ifndef DEFAULT_PKCS11_WHITELIST
+-# define DEFAULT_PKCS11_WHITELIST "/usr/lib/*,/usr/local/lib/*"
++# if __APPLE__
++#  define DEFAULT_PKCS11_WHITELIST "/Library/*,/usr/lib/*,/usr/local/lib/*"
++# else
++#  define DEFAULT_PKCS11_WHITELIST "/usr/lib/*,/usr/local/lib/*"
++# endif
+ #endif
+ 
+ typedef enum {
+
