@@ -15,7 +15,7 @@ class Openssh < Formula
 
   patch do
     url "https://raw.githubusercontent.com/mbrossard/homebrew-dupes/master/patches/openssh-sandbox-7.4p1.patch"
-    sha256 "897fcaeb76b833df72275aef8ea31e9549f93c7bd5f465f5aa7b40bc8f82fbdf"
+    sha256 "82d2b5f6f91fb5929a2a9fc6cfee97481ef4e5e1f1c6b7123005cde21ba3bf3c"
   end
 
   patch do
