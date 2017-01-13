@@ -3,8 +3,8 @@ class Openssh < Formula
   homepage "http://www.openssh.com/"
   url "http://ftp.openbsd.org/pub/OpenBSD/OpenSSH/portable/openssh-7.3p1.tar.gz"
   mirror "https://www.mirrorservice.org/pub/OpenBSD/OpenSSH/portable/openssh-7.3p1.tar.gz"
-  version "7.4p1"
-  sha256 "1b1fc4a14e2024293181924ed24872e6f2e06293f3e8926a376b8aec481f19d1"
+  version "7.3p1"
+  sha256 "3ffb989a6dcaa69594c3b550d4855a5a2e1718ccdde7f5e36387b424220fbecc"
 
   option "with-libressl", "Build with LibreSSL instead of OpenSSL"
 
@@ -14,13 +14,13 @@ class Openssh < Formula
   depends_on "pkg-config" => :build if build.with? "ldns"
 
   patch do
-    url "https://raw.githubusercontent.com/mbrossard/homebrew-dupes/master/patches/openssh-sandbox-7.4p1.patch"
-    sha256 "82d2b5f6f91fb5929a2a9fc6cfee97481ef4e5e1f1c6b7123005cde21ba3bf3c"
+    url "https://raw.githubusercontent.com/mbrossard/homebrew-dupes/master/patches/openssh-sandbox-7.2p1.patch"
+    sha256 "b4d731c8b4dc4aaf0498fb4afc1f41eb784182d401e9d90e02b2c10e79feb728"
   end
 
   patch do
-    url "https://raw.githubusercontent.com/mbrossard/homebrew-dupes/master/patches/openssh-launchd-7.4p1.patch"
-    sha256 "923907809dab8cb2621f6dc0fc38a41d920e17a4e424f979a35a3bedc5900c1c"
+    url "https://raw.githubusercontent.com/mbrossard/homebrew-dupes/master/patches/openssh-launchd-7.2p1.patch"
+    sha256 "9b8d752cc54028a1d5e7b476533a65ec9106e380ec176536cfde25213464429b"
   end
 
   patch do
