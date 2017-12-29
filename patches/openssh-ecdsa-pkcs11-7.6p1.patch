@@ -1,5 +1,5 @@
---- a/ssh-pkcs11-client.c	2016-03-09 10:04:48.000000000 -0800
-+++ b/ssh-pkcs11-client.c	2016-07-13 23:00:15.000000000 -0700
+--- a/ssh-pkcs11-client.c	2017-10-02 12:34:26.000000000 -0700
++++ b/ssh-pkcs11-client.c	2017-11-24 23:21:57.000000000 -0800
 @@ -31,6 +31,14 @@
  #include <errno.h>
  
@@ -112,8 +112,8 @@
  			(*keysp)[i] = k;
  			free(blob);
  		}
---- a/ssh-pkcs11-helper.c	2016-03-09 10:04:48.000000000 -0800
-+++ b/ssh-pkcs11-helper.c	2016-07-13 23:00:15.000000000 -0700
+--- a/ssh-pkcs11-helper.c	2017-10-02 12:34:26.000000000 -0700
++++ b/ssh-pkcs11-helper.c	2017-12-20 15:09:06.000000000 -0800
 @@ -24,6 +24,16 @@
  
  #include "openbsd-compat/sys-queue.h"
@@ -140,7 +140,28 @@
  			free(ki);
  		}
  	}
-@@ -180,14 +190,31 @@
+@@ -164,6 +174,20 @@
+ 	buffer_free(&msg);
+ }
+ 
++#ifdef ENABLE_PKCS11_ECDSA
++static u_int EC_KEY_order_size(EC_KEY *key)
++{
++	const EC_GROUP *group = EC_KEY_get0_group(key);
++	BIGNUM *order = BN_new();
++	u_int nbytes = 0;
++	if ((group != NULL) && (order != NULL) && EC_GROUP_get_order(group, order, NULL)) {
++		nbytes = BN_num_bytes(order);
++	}
++	BN_clear_free(order);
++	return nbytes;
++}
++#endif /* ENABLE_PKCS11_ECDSA */
++
+ static void
+ process_sign(void)
+ {
+@@ -180,14 +204,36 @@
  	if ((key = key_from_blob(blob, blen)) != NULL) {
  		if ((found = lookup_key(key)) != NULL) {
  #ifdef WITH_OPENSSL
@@ -163,16 +184,21 @@
 +				}
 +#ifdef ENABLE_PKCS11_ECDSA
 +			} else if(found->type == KEY_ECDSA) {
-+				ECDSA_SIG *sig = NULL;
++				ECDSA_SIG *sig;
 +				if ((sig = ECDSA_do_sign(data, dlen, found->ecdsa)) != NULL) {
-+					int rlen = BN_num_bytes(sig->r);
-+					slen = BN_num_bytes(sig->s);
-+					signature = xmalloc(slen + rlen);
-+					BN_bn2bin(sig->r, signature);
-+					BN_bn2bin(sig->s, signature + rlen);
++					/* PKCS11 2.3.1 recommends both r and s to have the order size for
++					   backward compatiblity */
++					u_int o_len = EC_KEY_order_size(found->ecdsa);
++					u_int r_len = BN_num_bytes(sig->r);
++					u_int s_len = BN_num_bytes(sig->s);
++					if (o_len > 0 && r_len <= o_len && s_len <= o_len) {
++						signature = xcalloc(2, o_len);
++						BN_bn2bin(sig->r, signature + o_len - r_len);
++						BN_bn2bin(sig->s, signature + (2 * o_len) - s_len);
++						slen = 2 * o_len;
++						ok = 0;
++					}
 +					ECDSA_SIG_free(sig);
-+					slen += rlen;
-+					ok = 0;
 +				}
 +#endif /* ENABLE_PKCS11_ECDSA */
 +			} else {
@@ -180,8 +206,8 @@
  			}
  #endif /* WITH_OPENSSL */
  		}
---- a/ssh-pkcs11.c	2016-03-09 10:04:48.000000000 -0800
-+++ b/ssh-pkcs11.c	2016-07-13 23:00:15.000000000 -0700
+--- a/ssh-pkcs11.c	2017-10-02 12:34:26.000000000 -0700
++++ b/ssh-pkcs11.c	2017-11-30 02:44:29.000000000 -0800
 @@ -32,6 +32,15 @@
  #include "openbsd-compat/sys-queue.h"
  
@@ -309,7 +335,7 @@
  	k11->provider = provider;
  	provider->refcount++;	/* provider referenced by RSA key */
  	k11->slotidx = slotidx;
-@@ -337,6 +359,146 @@
+@@ -337,6 +359,148 @@
  	return (0);
  }
  
@@ -426,8 +452,10 @@
 +	k11->slotidx = slotidx;
 +	/* identify key object on smartcard */
 +	k11->keyid_len = keyid_attrib->ulValueLen;
-+	k11->keyid = xmalloc(k11->keyid_len);
-+	memcpy(k11->keyid, keyid_attrib->pValue, k11->keyid_len);
++	if (k11->keyid_len > 0) {
++		k11->keyid = xmalloc(k11->keyid_len);
++		memcpy(k11->keyid, keyid_attrib->pValue, k11->keyid_len);
++    }
 +	ECDSA_set_method(ecdsa, get_pkcs11_ecdsa_method());
 +	ECDSA_set_ex_data(ecdsa, pkcs11_key_idx, k11);
 +	return (0);
@@ -456,32 +484,71 @@
  /* remove trailing spaces */
  static void
  rmspace(u_char *buf, size_t len)
-@@ -417,6 +579,13 @@
- 		{ CKA_MODULUS, NULL, 0 },
- 		{ CKA_PUBLIC_EXPONENT, NULL, 0 }
+@@ -397,17 +561,19 @@
+  * keysp points to an (possibly empty) array with *nkeys keys.
+  */
+ static int pkcs11_fetch_keys_filter(struct pkcs11_provider *, CK_ULONG,
+-    CK_ATTRIBUTE [], CK_ATTRIBUTE [3], struct sshkey ***, int *)
++    CK_ATTRIBUTE [], int, CK_ATTRIBUTE [3], struct sshkey ***, int *)
+ 	__attribute__((__bounded__(__minbytes__,4, 3 * sizeof(CK_ATTRIBUTE))));
+ 
+ static int
+ pkcs11_fetch_keys(struct pkcs11_provider *p, CK_ULONG slotidx,
+     struct sshkey ***keysp, int *nkeys)
+ {
+-	CK_OBJECT_CLASS	pubkey_class = CKO_PUBLIC_KEY;
+-	CK_OBJECT_CLASS	cert_class = CKO_CERTIFICATE;
++	CK_KEY_TYPE	        pubkey_type = CKK_RSA;
++	CK_OBJECT_CLASS	    pubkey_class = CKO_PUBLIC_KEY;
++	CK_OBJECT_CLASS	    cert_class = CKO_CERTIFICATE;
+ 	CK_ATTRIBUTE		pubkey_filter[] = {
+-		{ CKA_CLASS, NULL, sizeof(pubkey_class) }
++		{ CKA_CLASS, NULL, sizeof(pubkey_class) },
++		{ CKA_KEY_TYPE, NULL, sizeof(pubkey_type) }
+ 	};
+ 	CK_ATTRIBUTE		cert_filter[] = {
+ 		{ CKA_CLASS, NULL, sizeof(cert_class) }
+@@ -422,12 +588,31 @@
+ 		{ CKA_SUBJECT, NULL, 0 },
+ 		{ CKA_VALUE, NULL, 0 }
  	};
 +#ifdef ENABLE_PKCS11_ECDSA
++	CK_KEY_TYPE	        ecdsa_type = CKK_EC;
++	CK_ATTRIBUTE		ecdsa_filter[] = {
++		{ CKA_CLASS, NULL, sizeof(pubkey_class) },
++		{ CKA_KEY_TYPE, NULL, sizeof(ecdsa_type) }
++	};
 +	CK_ATTRIBUTE		ecdsa_attribs[] = {
 +		{ CKA_ID, NULL, 0 },
 +		{ CKA_EC_PARAMS, NULL, 0 },
 +		{ CKA_EC_POINT, NULL, 0 }
 +	};
++	ecdsa_filter[0].pValue = &pubkey_class;
++	ecdsa_filter[1].pValue = &ecdsa_type;
 +#endif /* ENABLE_PKCS11_ECDSA */
- 	CK_ATTRIBUTE		cert_attribs[] = {
- 		{ CKA_ID, NULL, 0 },
- 		{ CKA_SUBJECT, NULL, 0 },
-@@ -427,6 +596,10 @@
+ 	pubkey_filter[0].pValue = &pubkey_class;
++	pubkey_filter[1].pValue = &pubkey_type;
+ 	cert_filter[0].pValue = &cert_class;
  
- 	if (pkcs11_fetch_keys_filter(p, slotidx, pubkey_filter, pubkey_attribs,
+-	if (pkcs11_fetch_keys_filter(p, slotidx, pubkey_filter, pubkey_attribs,
++	if (pkcs11_fetch_keys_filter(p, slotidx, pubkey_filter, 2, pubkey_attribs,
  	    keysp, nkeys) < 0 ||
+-	    pkcs11_fetch_keys_filter(p, slotidx, cert_filter, cert_attribs,
 +#ifdef ENABLE_PKCS11_ECDSA
-+	    pkcs11_fetch_keys_filter(p, slotidx, pubkey_filter, ecdsa_attribs,
++	    pkcs11_fetch_keys_filter(p, slotidx, ecdsa_filter, 2, ecdsa_attribs,
 +	    keysp, nkeys) < 0||
 +#endif /* ENABLE_PKCS11_ECDSA */
- 	    pkcs11_fetch_keys_filter(p, slotidx, cert_filter, cert_attribs,
++	    pkcs11_fetch_keys_filter(p, slotidx, cert_filter, 1, cert_attribs,
  	    keysp, nkeys) < 0)
  		return (-1);
-@@ -451,6 +624,11 @@
+ 	return (0);
+@@ -446,11 +631,16 @@
+ 
+ static int
+ pkcs11_fetch_keys_filter(struct pkcs11_provider *p, CK_ULONG slotidx,
+-    CK_ATTRIBUTE filter[], CK_ATTRIBUTE attribs[3],
++    CK_ATTRIBUTE filter[], int nfilter, CK_ATTRIBUTE attribs[3],
+     struct sshkey ***keysp, int *nkeys)
  {
  	struct sshkey		*key;
  	RSA			*rsa;
@@ -493,7 +560,16 @@
  	X509 			*x509;
  	EVP_PKEY		*evp;
  	int			i;
-@@ -505,6 +683,9 @@
+@@ -464,7 +654,7 @@
+ 	f = p->function_list;
+ 	session = p->slotinfo[slotidx].session;
+ 	/* setup a filter the looks for public keys */
+-	if ((rv = f->C_FindObjectsInit(session, filter, 1)) != CKR_OK) {
++	if ((rv = f->C_FindObjectsInit(session, filter, nfilter)) != CKR_OK) {
+ 		error("C_FindObjectsInit failed: %lu", rv);
+ 		return (-1);
+ 	}
+@@ -505,6 +695,9 @@
  		 * or ID, subject and value for certificates.
  		 */
  		rsa = NULL;
@@ -503,7 +579,7 @@
  		if ((rv = f->C_GetAttributeValue(session, obj, attribs, 3))
  		    != CKR_OK) {
  			error("C_GetAttributeValue failed: %lu", rv);
-@@ -517,6 +698,45 @@
+@@ -517,6 +710,45 @@
  				rsa->e = BN_bin2bn(attribs[2].pValue,
  				    attribs[2].ulValueLen, NULL);
  			}
@@ -549,13 +625,14 @@
  		} else {
  			cp = attribs[2].pValue;
  			if ((x509 = X509_new()) == NULL) {
-@@ -535,12 +755,26 @@
+@@ -535,13 +767,28 @@
  			if (x509)
  				X509_free(x509);
  		}
 -		if (rsa && rsa->n && rsa->e &&
 -		    pkcs11_rsa_wrap(p, slotidx, &attribs[0], rsa) == 0) {
--			key = sshkey_new(KEY_UNSPEC);
+-			if ((key = sshkey_new(KEY_UNSPEC)) == NULL)
+-				fatal("sshkey_new failed");
 -			key->rsa = rsa;
 -			key->type = KEY_RSA;
 -			key->flags |= SSHKEY_FLAG_EXT;
@@ -563,13 +640,15 @@
 +		if (rsa || ecdsa) {
 +			if (rsa && rsa->n && rsa->e &&
 +				pkcs11_rsa_wrap(p, slotidx, &attribs[0], rsa) == 0) {
-+				key = sshkey_new(KEY_UNSPEC);
++				if ((key = sshkey_new(KEY_UNSPEC)) == NULL)
++					fatal("sshkey_new failed");
 +				key->rsa = rsa;
 +				key->type = KEY_RSA;
 +				key->flags |= SSHKEY_FLAG_EXT;
 +#ifdef ENABLE_PKCS11_ECDSA
 +			} else if(ecdsa && pkcs11_ecdsa_wrap(p, slotidx, &attribs[0], ecdsa) == 0) {
-+				key = sshkey_new(KEY_UNSPEC);
++				if ((key = sshkey_new(KEY_UNSPEC)) == NULL)
++					fatal("sshkey_new failed");
 +				key->ecdsa = ecdsa;
 +				key->ecdsa_nid = sshkey_ecdsa_key_to_nid(ecdsa);
 +				key->type = KEY_ECDSA;
@@ -582,7 +661,7 @@
  			if (pkcs11_key_included(keysp, nkeys, key)) {
  				sshkey_free(key);
  			} else {
-@@ -553,6 +787,10 @@
+@@ -554,6 +801,10 @@
  			}
  		} else if (rsa) {
  			RSA_free(rsa);
@@ -593,8 +672,8 @@
  		}
  		for (i = 0; i < 3; i++)
  			free(attribs[i].pValue);
---- a/ssh-pkcs11.h	2016-03-09 10:04:48.000000000 -0800
-+++ b/ssh-pkcs11.h	2016-07-13 23:00:15.000000000 -0700
+--- a/ssh-pkcs11.h	2017-10-02 12:34:26.000000000 -0700
++++ b/ssh-pkcs11.h	2017-11-24 23:21:57.000000000 -0800
 @@ -17,6 +17,7 @@
  int	pkcs11_init(int);
  void	pkcs11_terminate(void);
