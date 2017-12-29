@@ -59,6 +59,17 @@
  			ret = 1;
  		goto done;
  	}
+--- a/ssh-agent.c	2017-10-02 12:34:26.000000000 -0700
++++ b/ssh-agent.c	2017-12-29 11:39:47.000000000 -0800
+@@ -95,7 +95,7 @@
+ #endif
+ 
+ #ifndef DEFAULT_PKCS11_WHITELIST
+-# define DEFAULT_PKCS11_WHITELIST "/usr/lib*/*,/usr/local/lib*/*"
++# define DEFAULT_PKCS11_WHITELIST "/usr/lib*/*,/usr/local/lib*/*,/usr/local/Cellar/*/*/lib/*,/Library/Frameworks/*/Versions/Current/Libraries/*"
+ #endif
+ 
+ /* Maximum accepted message length */
 --- a/ssh-pkcs11.c	2017-12-29 00:24:45.000000000 -0800
 +++ b/ssh-pkcs11.c	2017-12-29 00:28:46.000000000 -0800
 @@ -232,7 +232,15 @@ pkcs11_find(struct pkcs11_provider *p, C

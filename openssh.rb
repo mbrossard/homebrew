@@ -30,7 +30,7 @@ class Openssh < Formula
 
   patch do
     url "https://raw.githubusercontent.com/mbrossard/homebrew-dupes/7.6p1/patches/openssh-pkcs11-7.6p1.patch"
-    sha256 "4c460da9b81ce6c2ee37ecb10289a1d26992127df9bc55ecd8e7dc98fd0883d4"
+    sha256 "45eb8df7034f0f755e8f10cb23ed4e7c3f0332a67e410497584681543d10a7f6"
   end
 
   def install
